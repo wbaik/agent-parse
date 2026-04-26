@@ -2,10 +2,10 @@
 
 `agent-parse` asks a local agent to look where parsing is uncertain.
 
-LiteParse gives the fast local baseline: text, OCR metadata, bounding boxes, and
-page screenshots. `agent-parse` detects suspicious visual regions, sends only
-those pages to Claude Code or Codex, validates the response, and writes a
-hybrid artifact.
+[`@llamaindex/liteparse`](https://github.com/run-llama/liteparse) gives the
+fast local baseline: text, OCR metadata, bounding boxes, and page screenshots.
+`agent-parse` detects suspicious visual regions, sends only those pages to
+Claude Code or Codex, validates the response, and writes a hybrid artifact.
 
 Use it for figures, charts, workflow diagrams, visual tables, and low-confidence
 OCR regions. It is a review layer on top of LiteParse, not a replacement for it.
@@ -26,6 +26,9 @@ PDF
 npm install
 npm run build
 ```
+
+`agent-parse` depends on `@llamaindex/liteparse`. For the base parser docs, see
+the [LiteParse docs](https://developers.llamaindex.ai/liteparse/).
 
 ## Commands
 
