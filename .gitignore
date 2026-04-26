@@ -1,0 +1,9 @@
+.worktrees/
+node_modules/
+dist/
+coverage/
+.DS_Store
+out/
+out-prepare-test/
+eval/
+*.traineddata

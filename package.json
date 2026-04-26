@@ -1,0 +1,58 @@
+{
+  "name": "agent-parse",
+  "version": "0.1.0",
+  "description": "Agentic visual review layer on top of LiteParse",
+  "type": "module",
+  "license": "MIT",
+  "author": "Mike",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wbaik/agent-parse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wbaik/agent-parse/issues"
+  },
+  "homepage": "https://github.com/wbaik/agent-parse#readme",
+  "keywords": [
+    "pdf",
+    "ocr",
+    "llm",
+    "claude",
+    "codex",
+    "document-parsing",
+    "liteparse",
+    "agent",
+    "visual-review"
+  ],
+  "bin": {
+    "agent-parse": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@llamaindex/liteparse": "^1.5.2",
+    "commander": "^12.0.0",
+    "sharp": "^0.34.5",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
