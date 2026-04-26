@@ -79,4 +79,7 @@ extraction, inspect the screenshot.
 See `examples/finance-benchmark-mini/` for a compact example based on the
 Finance Agent Benchmark paper.
 
+See `docs/case-studies/finance-benchmark-eval-summary.md` for the per-paper
+review counts and representative correction types.
+
 That example is intentionally small. The full corpus was roughly 269 MB locally, which is too large for a normal developer package.

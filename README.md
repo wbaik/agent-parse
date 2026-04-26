@@ -65,7 +65,8 @@ papers:
 Prose extraction was strong. Figures, charts, and workflow diagrams benefited
 from visual review.
 
-See `docs/case-studies/finance-benchmark-corpus.md` and
+See `docs/case-studies/finance-benchmark-corpus.md`,
+`docs/case-studies/finance-benchmark-eval-summary.md`, and
 `examples/finance-benchmark-mini/`.
 
 ## How review works (read this before tuning timeouts)
