@@ -1,0 +1,64 @@
+{
+  "source": {
+    "parse": "parse.json",
+    "suspicious_regions": "suspicious-regions.json",
+    "corrections": "corrections.json"
+  },
+  "suspicious_regions": [
+    {
+      "page": 5,
+      "region_id": "page_5_region_1",
+      "kind": "figure",
+      "reasons": [
+        "ocr_text",
+        "low_ocr_confidence",
+        "figure_caption"
+      ],
+      "bbox": null,
+      "crop": "shots/page_5.png"
+    }
+  ],
+  "visual_corrections": [
+    {
+      "page": 5,
+      "region_id": "page_5_region_1",
+      "crop": "shots/page_5.png",
+      "kind": "figure",
+      "corrected_extraction": {
+        "summary": "Figure 3: Financial Agent Harness architecture diagram showing the interaction flow between LLM components, specialized tools, and information sources. The diagram shows an INPUT (Question) feeding into an LLM, which produces an OUTPUT (Final Answer). Below the LLM are TOOLS (GoogleSearch, Edgar SEC API Search, ParseHTML page, RetrieveInformation) on the left and a DATABASE on the right (Data collected by Model after Calls; Solutions by LLM on demand; with example entries {'Apple 10k 2023': content, 'Google 10k 2023': content}). The LLM also connects to a 'Continues up to 50 steps; Sampled by planner' loop.",
+        "visible_text": [
+          "Figure 3: Financial Agent Harness architecture showing the interaction flow between LLM components, specialized tools, and information sources.",
+          "INPUT",
+          "Question",
+          "LLM",
+          "OUTPUT",
+          "Final Answer",
+          "TOOLS",
+          "GoogleSearch",
+          "Edgar SEC API Search",
+          "ParseHTML page",
+          "RetrieveInformation",
+          "DATABASE",
+          "Data collected by Model after Calls",
+          "Solutions by LLM on demand",
+          "{'Apple 10k 2023': content,",
+          "Google 10k 2023': content}",
+          "Continues up to 50 steps",
+          "Sampled by planner"
+        ],
+        "relationships": [
+          "Figure 3 is referenced in Section 3.2 Environment Feedback: 'As described in Figure 3, after any tool call, the model receives feedback on whether the call succeeded or failed, and the result of the call (on success).'",
+          "The TOOLS listed (GoogleSearch, EdgarSearch, ParseHTML, RetrieveInformation) correspond to the tools described in Section 3.1 Tools Overview."
+        ],
+        "uncertain": [
+          "Exact label text for the loop annotation ('Continues up to 50 steps; Sampled by planner') may differ slightly"
+        ]
+      },
+      "notes": "OCR was flagged for low confidence on this figure. The diagram is legible in the image. The figure caption reads: 'Figure 3: Financial Agent Harness architecture showing the interaction flow between LLM components, specialized tools, and information sources.' The architecture shows INPUT -> LLM -> OUTPUT with TOOLS and DATABASE as supporting components. The DATABASE example entries use curly-brace dict notation."
+    }
+  ],
+  "parse_excerpt": {
+    "pages_total": 24,
+    "page_5_text_preview": " Continues  A\nup to50    steps   \\\n4\nHandles its        J\n\nQuestion            Final Answer\n\n\n\n =  GoogleSearch                                  Data collected  by Model after Calls\n =  EDGAR SEC_API   Search                        (accessible by LLM on demand)\n =  ParseHTML page                                         10k    2023’:  content,\n =  RetrieveInformation                           ‘Google  10k    2023’:  content}}\n\nFigure 3: Financial Agent Harness architecture showing the interaction flow between LLM compo-\nnents, specialized tools, and information sources.\n\n\n3.1 Tools Overview\n\nThe harness employs a variety of specialized tools to access and process financial information. Each\ntool is designed to perform a specific function:\n\n•  GoogleSearch: A tool to access general web search.\n•  EdgarSearch: A tool to access the EDGAR database, containing public SEC filings3.\n•  ParseHTML: A tool that extracts and saves content from HTML web pages in a key-value store\n   database.\n•  RetrieveInformation: A tool to retrieve stored document content from the key-value database and\n   send the retrieved content to the model.\n\nThe ParseHTML and the RetrieveInformation tools collectively allow the model to manage its own\ncontext window. The human experts did not make use of any additional tools when writing and\nanswering their questions. More information about each tool is available in Appendix C.2.\n\n3.2 Environment Feedback\n\nEnvironment feedback is a critical aspect of agent environments [33]. As described in Figure 3, after\nany tool call, the model receives feedback on whether t"
+  }
+}

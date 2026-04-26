@@ -1,0 +1,27 @@
+{
+  "name": "finance-benchmark-mini",
+  "description": "Small developer-facing agent-parse case study using one reviewed figure from Finance Agent Benchmark.",
+  "source_paper": {
+    "title": "Finance Agent Benchmark: Benchmarking LLMs on Real-world Financial Research Tasks",
+    "arxiv": "2508.00828",
+    "url": "https://arxiv.org/abs/2508.00828"
+  },
+  "corpus_summary": {
+    "full_local_corpus_pdfs": 24,
+    "full_local_corpus_pages": 502,
+    "full_local_visual_regions_reviewed": 75,
+    "full_local_visual_regions_corrected": 75,
+    "full_local_visual_review_failures_after_retry": 0
+  },
+  "included_example": {
+    "paper": "finance-agent-benchmark__2508.00828",
+    "pages_in_parse": 24,
+    "selected_page": 5,
+    "suspicious_regions": 1,
+    "visual_corrections": 1,
+    "screenshots": [
+      "finance-agent-benchmark/shots/page_5.png"
+    ]
+  },
+  "caution": "Corrections are agent-generated visual-review artifacts. Use hybrid.excerpt.json for workflow inspection, and spot-check screenshots before treating figure-internal text as ground truth."
+}

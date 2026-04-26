@@ -1,0 +1,42 @@
+{
+  "source_pdf": "/Users/woobaik/code/april_2026/finance-benchmarks/benchmark-corpus/pdfs/finance-agent-benchmark__2508.00828.pdf",
+  "corrections": [
+    {
+      "page": 5,
+      "region_id": "page_5_region_1",
+      "crop": "shots/page_5.png",
+      "kind": "figure",
+      "corrected_extraction": {
+        "summary": "Figure 3: Financial Agent Harness architecture diagram showing the interaction flow between LLM components, specialized tools, and information sources. The diagram shows an INPUT (Question) feeding into an LLM, which produces an OUTPUT (Final Answer). Below the LLM are TOOLS (GoogleSearch, Edgar SEC API Search, ParseHTML page, RetrieveInformation) on the left and a DATABASE on the right (Data collected by Model after Calls; Solutions by LLM on demand; with example entries {'Apple 10k 2023': content, 'Google 10k 2023': content}). The LLM also connects to a 'Continues up to 50 steps; Sampled by planner' loop.",
+        "visible_text": [
+          "Figure 3: Financial Agent Harness architecture showing the interaction flow between LLM components, specialized tools, and information sources.",
+          "INPUT",
+          "Question",
+          "LLM",
+          "OUTPUT",
+          "Final Answer",
+          "TOOLS",
+          "GoogleSearch",
+          "Edgar SEC API Search",
+          "ParseHTML page",
+          "RetrieveInformation",
+          "DATABASE",
+          "Data collected by Model after Calls",
+          "Solutions by LLM on demand",
+          "{'Apple 10k 2023': content,",
+          "Google 10k 2023': content}",
+          "Continues up to 50 steps",
+          "Sampled by planner"
+        ],
+        "relationships": [
+          "Figure 3 is referenced in Section 3.2 Environment Feedback: 'As described in Figure 3, after any tool call, the model receives feedback on whether the call succeeded or failed, and the result of the call (on success).'",
+          "The TOOLS listed (GoogleSearch, EdgarSearch, ParseHTML, RetrieveInformation) correspond to the tools described in Section 3.1 Tools Overview."
+        ],
+        "uncertain": [
+          "Exact label text for the loop annotation ('Continues up to 50 steps; Sampled by planner') may differ slightly"
+        ]
+      },
+      "notes": "OCR was flagged for low confidence on this figure. The diagram is legible in the image. The figure caption reads: 'Figure 3: Financial Agent Harness architecture showing the interaction flow between LLM components, specialized tools, and information sources.' The architecture shows INPUT -> LLM -> OUTPUT with TOOLS and DATABASE as supporting components. The DATABASE example entries use curly-brace dict notation."
+    }
+  ]
+}

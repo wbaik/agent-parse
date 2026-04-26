@@ -1,13 +1,24 @@
 # agent-parse
 
-`agent-parse` is an agentic visual review layer on top of LiteParse.
+`agent-parse` asks a local agent to look where parsing is uncertain.
 
-LiteParse handles deterministic document extraction: text, OCR metadata, page
-screenshots, and bounding boxes. `agent-parse` adds the review harness around
-it: detect suspicious regions, render images, ask a local coding-agent CLI
-(Claude Code or Codex) to inspect those images **one task at a time**, validate
-each returned correction against a strict JSON schema, and merge the results
-into a hybrid artifact.
+LiteParse gives the fast local baseline: text, OCR metadata, bounding boxes, and
+page screenshots. `agent-parse` detects suspicious visual regions, sends only
+those pages to Claude Code or Codex, validates the response, and writes a
+hybrid artifact.
+
+Use it for figures, charts, workflow diagrams, visual tables, and low-confidence
+OCR regions. It is a review layer on top of LiteParse, not a replacement for it.
+
+```text
+PDF
+  -> LiteParse parse.json + page screenshots
+  -> suspicious region detection
+  -> visual-review-tasks.json
+  -> local agent review
+  -> corrections.json
+  -> hybrid.json
+```
 
 ## Install
 
@@ -28,6 +39,34 @@ node dist/index.js finalize <dir>
 
 `parse` is `prepare → review → finalize` glued together. The three building
 blocks are independent so a human or another agent can step in between them.
+
+## Why this exists
+
+OCR can read characters. Agents can inspect visual meaning.
+
+`agent-parse` keeps the cheap deterministic pass, then adds a semantic second
+pass only where it is needed. The output keeps both layers: raw `parse.json`
+plus reviewed visual corrections in `hybrid.json`.
+
+## Case study: finance benchmark papers
+
+During development, `agent-parse` was run on a local corpus of finance benchmark
+papers:
+
+| Metric | Count |
+|---|---:|
+| PDFs | 24 |
+| Pages | 502 |
+| Flagged visual-review regions | 75 |
+| Reviewed regions | 75 |
+| Visual corrections | 75 |
+| Final failed regions | 0 |
+
+Prose extraction was strong. Figures, charts, and workflow diagrams benefited
+from visual review.
+
+See `docs/case-studies/finance-benchmark-corpus.md` and
+`examples/finance-benchmark-mini/`.
 
 ## How review works (read this before tuning timeouts)
 

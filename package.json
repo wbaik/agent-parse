@@ -31,6 +31,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "docs/case-studies",
+    "examples/finance-benchmark-mini",
     "README.md",
     "LICENSE"
   ],

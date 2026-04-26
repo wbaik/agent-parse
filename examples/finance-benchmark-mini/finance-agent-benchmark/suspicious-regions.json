@@ -1,0 +1,14 @@
+[
+  {
+    "page": 5,
+    "region_id": "page_5_region_1",
+    "kind": "figure",
+    "reasons": [
+      "ocr_text",
+      "low_ocr_confidence",
+      "figure_caption"
+    ],
+    "bbox": null,
+    "crop": "shots/page_5.png"
+  }
+]
