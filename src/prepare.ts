@@ -2,7 +2,7 @@ import { rm, access, mkdir, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { LiteParse } from "@llamaindex/liteparse";
 import { detectSuspiciousRegions } from "./detect.js";
-import { writeRegionCrops } from "./images.js";
+import { writeRegionCrops, type PageDimensions } from "./images.js";
 import {
   type SuspiciousRegion,
   type VisualReviewTask,
@@ -83,9 +83,11 @@ export async function prepare(options: PrepareOptions): Promise<PrepareResult> {
     }
   }
 
+  const pageDimensions = extractPageDimensions(parseJson);
   const cropResults = await writeRegionCrops({
     regions,
     shotsDir,
+    pageDimensions,
   });
   const cropByRegion = new Map(
     cropResults.map((result) => [result.region_id, result]),
@@ -187,4 +189,51 @@ async function prepareOutputDir(outputDir: string, force: boolean): Promise<void
 async function writeJson(file: string, value: unknown): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function extractPageDimensions(
+  parseJson: unknown,
+): Map<number, PageDimensions> {
+  const dimensions = new Map<number, PageDimensions>();
+  if (!parseJson || typeof parseJson !== "object") {
+    return dimensions;
+  }
+  const pages = (parseJson as { pages?: unknown }).pages;
+  if (!Array.isArray(pages)) {
+    return dimensions;
+  }
+  for (const page of pages) {
+    if (!page || typeof page !== "object") continue;
+    const record = page as {
+      page?: unknown;
+      pageNum?: unknown;
+      width?: unknown;
+      height?: unknown;
+    };
+    const pageNumber =
+      typeof record.page === "number" && Number.isInteger(record.page)
+        ? record.page
+        : typeof record.pageNum === "number" && Number.isInteger(record.pageNum)
+          ? record.pageNum
+          : undefined;
+    const width =
+      typeof record.width === "number" && Number.isFinite(record.width)
+        ? record.width
+        : undefined;
+    const height =
+      typeof record.height === "number" && Number.isFinite(record.height)
+        ? record.height
+        : undefined;
+    if (
+      pageNumber === undefined ||
+      width === undefined ||
+      height === undefined ||
+      width <= 0 ||
+      height <= 0
+    ) {
+      continue;
+    }
+    dimensions.set(pageNumber, { widthPoints: width, heightPoints: height });
+  }
+  return dimensions;
 }

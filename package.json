@@ -39,6 +39,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit"
   },

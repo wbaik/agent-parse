@@ -22,11 +22,11 @@ async function writePdfFixture() {
   return file;
 }
 
-async function imageBuffer() {
+async function imageBuffer(width = 64, height = 48) {
   return sharp({
     create: {
-      width: 64,
-      height: 48,
+      width,
+      height,
       channels: 4,
       background: { r: 255, g: 255, b: 255, alpha: 1 },
     },
@@ -112,6 +112,68 @@ describe("prepare", () => {
     expect(tasks.tasks[0].crop).toBe("shots/page_2.png");
     await expect(
       stat(path.join(outputDir, "shots", "page_2.png")),
+    ).resolves.toBeTruthy();
+  });
+
+  it("crops per-region when OCR items carry geometry and page dimensions are known", async () => {
+    const input = await writePdfFixture();
+    const outputDir = path.join(dir, "out");
+    // Stub a 1224x1584 px screenshot for a 612x792 pt page (2 px/pt scale).
+    const adapter: LiteParseAdapter = {
+      async parse() {
+        return {
+          pages: [
+            {
+              page: 4,
+              width: 612,
+              height: 792,
+              text: "Figure 4: harness",
+              textItems: [
+                { text: "INPUT", fontName: "OCR", confidence: 0.95, x: 100, y: 200, width: 60, height: 12 },
+                { text: "LLM", fontName: "OCR", confidence: 0.93, x: 200, y: 200, width: 40, height: 12 },
+                { text: "OUTPUT", fontName: "OCR", confidence: 0.94, x: 280, y: 200, width: 70, height: 12 },
+              ],
+            },
+          ],
+        };
+      },
+      async screenshot(_input, pages) {
+        const buffer = await imageBuffer(1224, 1584);
+        return pages.map((pageNum) => ({ pageNum, imageBuffer: buffer }));
+      },
+    };
+
+    await prepare({ input, outputDir, force: true, adapter });
+
+    const regions = JSON.parse(
+      await readFile(path.join(outputDir, "suspicious-regions.json"), "utf8"),
+    );
+    const tasks = JSON.parse(
+      await readFile(path.join(outputDir, "visual-review-tasks.json"), "utf8"),
+    );
+
+    expect(regions).toHaveLength(1);
+    expect(regions[0].bbox).toEqual({
+      x: 100,
+      y: 200,
+      width: 250,
+      height: 12,
+    });
+    expect(regions[0].crop).toBe("shots/page_4_region_1.png");
+    expect(tasks.tasks).toHaveLength(1);
+    expect(tasks.tasks[0].crop).toBe("shots/page_4_region_1.png");
+
+    // Verify a real cropped file exists with bbox*scale + 2*padding dimensions.
+    // bbox px: 200..700 wide, 400..424 tall. Padded ±24 → 176..724 wide, 376..448 tall.
+    // → 548 × 72.
+    const cropMeta = await sharp(
+      path.join(outputDir, "shots", "page_4_region_1.png"),
+    ).metadata();
+    expect(cropMeta.width).toBe(548);
+    expect(cropMeta.height).toBe(72);
+    // Full-page shot still present alongside the crop.
+    await expect(
+      stat(path.join(outputDir, "shots", "page_4.png")),
     ).resolves.toBeTruthy();
   });
 
