@@ -1,8 +1,9 @@
 import { rm, access, mkdir, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { LiteParse } from "@llamaindex/liteparse";
-import { detectSuspiciousRegions } from "./detect.js";
+import { findPagesNeedingReview, type PageCandidate } from "./detect.js";
 import { writeRegionCrops, type PageDimensions } from "./images.js";
+import { segmentPageLayout, type LayoutRegion } from "./layout.js";
 import {
   type SuspiciousRegion,
   type VisualReviewTask,
@@ -61,29 +62,26 @@ export async function prepare(options: PrepareOptions): Promise<PrepareResult> {
   const parsePath = path.join(options.outputDir, "parse.json");
   await writeJson(parsePath, parseJson);
 
-  const regions = detectSuspiciousRegions(parseJson, {
-    ocrConfidenceThreshold: options.ocrConfidenceThreshold,
-  });
-
-  const pages = Array.from(new Set(regions.map((region) => region.page))).sort(
-    (a, b) => a - b,
-  );
+  const candidates = findPagesNeedingReview(parseJson);
   const shotsDir = path.join(options.outputDir, "shots");
-  if (regions.length > 0) {
+  if (candidates.length > 0) {
     await mkdir(shotsDir, { recursive: true });
   }
 
-  if (pages.length > 0) {
-    const screenshots = await adapter.screenshot(options.input, pages);
-    for (const screenshot of screenshots) {
-      await writeFile(
-        path.join(shotsDir, `page_${screenshot.pageNum}.png`),
-        screenshot.imageBuffer,
-      );
-    }
-  }
+  const pageImagePaths = await screenshotCandidates(
+    adapter,
+    options.input,
+    candidates,
+    shotsDir,
+  );
 
-  const pageDimensions = extractPageDimensions(parseJson);
+  const regions = await buildRegions({
+    candidates,
+    pageImagePaths,
+    ocrConfidenceThreshold: options.ocrConfidenceThreshold,
+  });
+
+  const pageDimensions = pageDimensionsFromCandidates(candidates);
   const cropResults = await writeRegionCrops({
     regions,
     shotsDir,
@@ -95,12 +93,8 @@ export async function prepare(options: PrepareOptions): Promise<PrepareResult> {
 
   const regionsWithCrops = regions.map((region) => {
     const crop = cropByRegion.get(region.region_id);
-    if (!crop) {
-      return region;
-    }
-    if (crop.ok) {
-      return { ...region, crop: crop.crop };
-    }
+    if (!crop) return region;
+    if (crop.ok) return { ...region, crop: crop.crop };
     return { ...region, error: crop.error };
   });
 
@@ -114,7 +108,7 @@ export async function prepare(options: PrepareOptions): Promise<PrepareResult> {
     .filter((region): region is SuspiciousRegion & { crop: string } =>
       Boolean(region.crop),
     )
-    .map((region) => createTask(region));
+    .map(createTask);
   const manifest: VisualReviewTaskManifest = {
     source_pdf: path.resolve(options.input),
     tasks,
@@ -139,6 +133,88 @@ export async function prepare(options: PrepareOptions): Promise<PrepareResult> {
     regions: regionsWithCrops,
     tasks,
   };
+}
+
+async function screenshotCandidates(
+  adapter: LiteParseAdapter,
+  input: string,
+  candidates: PageCandidate[],
+  shotsDir: string,
+): Promise<Map<number, string>> {
+  const pageImagePaths = new Map<number, string>();
+  if (candidates.length === 0) return pageImagePaths;
+  const pageNums = candidates.map((c) => c.page);
+  const screenshots = await adapter.screenshot(input, pageNums);
+  for (const shot of screenshots) {
+    const file = path.join(shotsDir, `page_${shot.pageNum}.png`);
+    await writeFile(file, shot.imageBuffer);
+    pageImagePaths.set(shot.pageNum, file);
+  }
+  return pageImagePaths;
+}
+
+interface BuildRegionsInput {
+  candidates: PageCandidate[];
+  pageImagePaths: Map<number, string>;
+  ocrConfidenceThreshold: number | undefined;
+}
+
+async function buildRegions(
+  input: BuildRegionsInput,
+): Promise<SuspiciousRegion[]> {
+  const out: SuspiciousRegion[] = [];
+  for (const candidate of input.candidates) {
+    const imagePath = input.pageImagePaths.get(candidate.page);
+    const layoutRegions = imagePath
+      ? await segmentPageLayout({
+          imagePath,
+          pageDimensions: candidate.pageDimensions,
+          ocrItems: candidate.ocrItems,
+          ocrConfidenceThreshold: input.ocrConfidenceThreshold,
+        })
+      : geometryLessFallback(candidate, input.ocrConfidenceThreshold);
+    layoutRegions.forEach((region, idx) => {
+      out.push(toSuspiciousRegion(candidate.page, idx + 1, region));
+    });
+  }
+  return out;
+}
+
+function geometryLessFallback(
+  candidate: PageCandidate,
+  thresholdOverride: number | undefined,
+): LayoutRegion[] {
+  const threshold = thresholdOverride ?? 0.8;
+  const hasLow = candidate.ocrItems.some(
+    (it) => typeof it.confidence === "number" && it.confidence < threshold,
+  );
+  return [{ bbox: null, hasLowConfidence: hasLow }];
+}
+
+function toSuspiciousRegion(
+  page: number,
+  index: number,
+  region: LayoutRegion,
+): SuspiciousRegion {
+  const reasons = ["ocr_text"];
+  if (region.hasLowConfidence) reasons.push("low_ocr_confidence");
+  return {
+    page,
+    region_id: `page_${page}_region_${index}`,
+    kind: "unknown",
+    reasons,
+    bbox: region.bbox,
+  };
+}
+
+function pageDimensionsFromCandidates(
+  candidates: PageCandidate[],
+): Map<number, PageDimensions> {
+  const out = new Map<number, PageDimensions>();
+  for (const c of candidates) {
+    if (c.pageDimensions) out.set(c.page, c.pageDimensions);
+  }
+  return out;
 }
 
 function createTask(
@@ -179,9 +255,7 @@ async function prepareOutputDir(outputDir: string, force: boolean): Promise<void
     }
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
-    if (code !== "ENOENT") {
-      throw error;
-    }
+    if (code !== "ENOENT") throw error;
     await mkdir(outputDir, { recursive: true });
   }
 }
@@ -189,51 +263,4 @@ async function prepareOutputDir(outputDir: string, force: boolean): Promise<void
 async function writeJson(file: string, value: unknown): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
-}
-
-function extractPageDimensions(
-  parseJson: unknown,
-): Map<number, PageDimensions> {
-  const dimensions = new Map<number, PageDimensions>();
-  if (!parseJson || typeof parseJson !== "object") {
-    return dimensions;
-  }
-  const pages = (parseJson as { pages?: unknown }).pages;
-  if (!Array.isArray(pages)) {
-    return dimensions;
-  }
-  for (const page of pages) {
-    if (!page || typeof page !== "object") continue;
-    const record = page as {
-      page?: unknown;
-      pageNum?: unknown;
-      width?: unknown;
-      height?: unknown;
-    };
-    const pageNumber =
-      typeof record.page === "number" && Number.isInteger(record.page)
-        ? record.page
-        : typeof record.pageNum === "number" && Number.isInteger(record.pageNum)
-          ? record.pageNum
-          : undefined;
-    const width =
-      typeof record.width === "number" && Number.isFinite(record.width)
-        ? record.width
-        : undefined;
-    const height =
-      typeof record.height === "number" && Number.isFinite(record.height)
-        ? record.height
-        : undefined;
-    if (
-      pageNumber === undefined ||
-      width === undefined ||
-      height === undefined ||
-      width <= 0 ||
-      height <= 0
-    ) {
-      continue;
-    }
-    dimensions.set(pageNumber, { widthPoints: width, heightPoints: height });
-  }
-  return dimensions;
 }
